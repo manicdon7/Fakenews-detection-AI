@@ -54,4 +54,4 @@ You should also have the following CSV datasets in the same directory as this sc
 
 3. Run the script using Python:
    ```bash
-   python NLP.py
+   python app.py
