@@ -2,8 +2,9 @@ import pandas as pd
 import nltk
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier  # Using RandomForest for ensemble
 from sklearn.metrics import classification_report
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 # Load the datasets
 true_data = pd.read_csv('True.csv')
@@ -31,21 +32,37 @@ def preprocess_text(text):
 
 df['text'] = df['text'].apply(preprocess_text)
 
+# Sentiment analysis using VADER SentimentIntensityAnalyzer
+sia = SentimentIntensityAnalyzer()
+
+def analyze_sentiment(text):
+    sentiment = sia.polarity_scores(text)
+    return sentiment['compound']  # Compound score combines positive and negative sentiment
+
+df['sentiment'] = df['text'].apply(analyze_sentiment)
+
+# Additional feature: Text length
+df['text_length'] = df['text'].apply(lambda x: len(x))
+
 # Split the dataset into training and testing
-X = df['text']
+X = df[['text', 'sentiment', 'text_length']]  # Include sentiment and text length as features
 y = df['label']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Vectorize the text data
 tfidf_vectorizer = TfidfVectorizer(max_features=5000)
-X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
-X_test_tfidf = tfidf_vectorizer.transform(X_test)
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train['text'])
+X_test_tfidf = tfidf_vectorizer.transform(X_test['text'])
 
-# Train a classifier (e.g., Naive Bayes)
-clf = MultinomialNB()
-clf.fit(X_train_tfidf, y_train)
+# Add sentiment and text length as features
+X_train_features = pd.concat([pd.DataFrame(X_train_tfidf.toarray()), X_train[['sentiment', 'text_length']].reset_index(drop=True)], axis=1)
+X_test_features = pd.concat([pd.DataFrame(X_test_tfidf.toarray()), X_test[['sentiment', 'text_length']].reset_index(drop=True)])
+
+# Train a classifier (Random Forest for ensemble)
+clf = RandomForestClassifier()
+clf.fit(X_train_features, y_train)
 
 # Evaluate the model
-y_pred = clf.predict(X_test_tfidf)
+y_pred = clf.predict(X_test_features)
 print(classification_report(y_test, y_pred))
