@@ -11,7 +11,6 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 true_data = pd.read_csv('True.csv')
 false_data = pd.read_csv('Fake.csv')
 
-# Add a 'label' column to indicate real news (0) and fake news (1)
 true_data['label'] = 0
 false_data['label'] = 1
 
@@ -23,7 +22,6 @@ nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
 
 def preprocess_text(text):
-    # Add your text preprocessing steps here (e.g., lowercasing, removing stopwords)
     words = text.split()
     words = [word.lower() for word in words if word.lower() not in stop_words]
     return ' '.join(words)
@@ -35,8 +33,7 @@ sia = SentimentIntensityAnalyzer()
 
 def analyze_sentiment(text):
     sentiment = sia.polarity_scores(text)
-    return sentiment['compound']  # Compound score combines positive and negative sentiment
-
+    return sentiment['compound']  
 df['sentiment'] = df['text'].apply(analyze_sentiment)
 
 df['text_length'] = df['text'].apply(lambda x: len(x))
